@@ -12,9 +12,9 @@
           .tabbable
             %ul.nav.nav-tabs
               %li.active
-                %a#first-tab{"data-toggle" => "tab", href: "#first-step"} Шаг 1
+                %a#first-tab{href: "#first-step"} Шаг 1
               %li
-                %a#second-tab{"data-toggle" => "tab", href: "#second-step"} Шаг 2
+                %a#second-tab{href: "#second-step"} Шаг 2
 
             %form(action='/result' method='post')
               .tab-content
@@ -22,15 +22,24 @@
                   .col-md-4.col-md-offset-4.well.main
                     .form-group
                       %label.control-label{for: "aim-select"} Выберите цель поиска
-                      %select#aim-select.form-control{ :name => "aim", :value => ""}
-                        -# -binding.pry
+                      %select#aim-select.form-control{ name: "aim" }
                         -aims_options.map do |a|
-                          %option '#{a}'
+                          -haml_tag :option, "#{a}", value: a
                     .form-group
                       .pull-right
                         %a#next-button.btn.btn-primary Далее
                 #second-step.tab-pane
                   .col-md-4.col-md-offset-4.well.main
+                    -input_list.map do |key,value|
+                      -name = key.gsub(' ', '-')
+                      .form-group{class: "#{name}"}
+                        %label.control-label "#{name}"
+                        %select.form-control{ name: "#{name}", id: "#{name}" }
+                          %option ' '
+                          -binding.pry
+                          -value.map do |a|
+                            -haml_tag :optin, "#{a}", value: a
+
 
 
     %script{src: "http://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.js", type: "text/javascript"}

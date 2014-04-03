@@ -18,12 +18,22 @@ class Ai < Sinatra::Base
       aims += @@rules_array.map{ |r| r.result.keys.first }
       aims.uniq
     end
+
+    def input_list
+      list = @@conditions_list
+      @@rules_array.map do |r|
+        key = r.result.keys.first
+        value = r.result.values.first
+        list[key] = [] unless list.key?(key)
+        list[key] << value unless list[key].include?(value)
+      end
+      list
+    end
   end
+
   get '/' do
     parse_json
     create_conditions_list
-    @rules_array = @@rules_array
-    @conditions_list = @@conditions_list
     haml :index
   end
 
