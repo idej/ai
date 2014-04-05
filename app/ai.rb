@@ -14,7 +14,7 @@ class Ai < Sinatra::Base
 
   helpers do
     def aims_options
-      aims = [" "]
+      aims = [""]
       aims += @@rules_array.map{ |r| r.result.keys.first }
       aims.uniq
     end
@@ -32,21 +32,52 @@ class Ai < Sinatra::Base
   end
 
   get '/' do
+    clear_variables
     parse_json
     create_conditions_list
     haml :index
   end
 
   post '/result' do
-    binding.pry
-   # haml :index
+    @@main_aim = params[:aim]
+    params[:context].each do |key,value|
+      @@context_stack[key.gsub('-', ' ')] = value unless value.empty?
+    end
+    calculate
+  end
+
+  post '/additional_info' do
+    @@context_stack[@@aims_stack.last[0]] = params[:additional_info]
+    write_log("ответ на вопрос: #{@@aims_stack.last[0]}? #{params[:additional_info]}")
+    a = @@aims_stack.pop
+    calculate(a[1])
   end
 
   private
 
+  def calculate(number=nil)
+    a = main_method(number)
+    if a
+      @aim = @@main_aim
+      @result = @@context_stack[@aim]
+      haml :result
+    else
+      @input_param = @@aims_stack.last[0]
+      @values = input_list[@input_param]
+      if @input_param == @@main_aim
+        @aim = @@main_aim
+        @result = "невозможно определить"
+        haml :result
+      else
+        haml :aditional_info
+      end
+    end
+  end
+
   def parse_json
     file = open(File.expand_path('database.json', settings.public_folder))
     json = file.read
+    file.close
     parsed = JSON.parse(json)
     parsed["questions"].each do |que|
       q = Question.new(que)
@@ -64,25 +95,20 @@ class Ai < Sinatra::Base
     end
   end
 
-  def main_method
-    @@aims_stack << [@@main_aim, -1]
+  def main_method(q_num=nil)
+    @@aims_stack << [@@main_aim, -1] && write_log("стек целей: #{@@main_aim}") unless q_num
     b = false
     until b
       last_aim = @@aims_stack.last[0]
-      rule_number = find_rule_number(@@aims_stack.last[0])
-      if (rule_number != nil)
+      rule_number = q_num ? q_num : find_rule_number(@@aims_stack.last[0])
+      q_num = nil
+      if rule_number
         b = analyze_rule(rule_number, last_aim)
       else
-        puts "Введите значение параметра #{@@aims_stack.last[0]}"
-        value = gets.chomp
-        @@context_stack[@@aims_stack.last[0]] = value
-        a = @@aims_stack.pop
-        b = analyze_rule(a[1], @@aims_stack.last[0])
+        return false
       end
     end
-
-
-    p @@context_stack[@@main_aim]
+    @@context_stack[@@main_aim]
   end
 
   def find_rule_number(aim)
@@ -94,13 +120,14 @@ class Ai < Sinatra::Base
 
   def analyze_rule(rule_number, aim)
     return_value = false
-
     case can_find_aim?(rule_number, aim)
 
     when 1
       @@rules_array.each do |r|
         if (r.id == rule_number)
           @@context_stack[aim] = r.result[aim]
+          message = "истина, контекстный стек: #{aim} - #{@@context_stack[aim]}"
+          write_log("Правило #{rule_number}: #{message}" )
           r.mark = :accept
           break
         end
@@ -115,12 +142,16 @@ class Ai < Sinatra::Base
           break
         end
       end
+      message = "ложь"
+      write_log("Правило #{rule_number}: #{message}" )
 
     when 0
       r = find_rule_by_id(rule_number)
       r.conditions.each do |key, value|
         unless @@context_stack.key?(key)
           @@aims_stack << [key, rule_number]
+          message = "неизвестно, стек целей: #{key}, правило #{rule_number}"
+          write_log("Правило #{rule_number}: #{message}" )
           break
         end
       end
@@ -131,12 +162,12 @@ class Ai < Sinatra::Base
 
   def can_find_aim?(rule_number, aim)
     return_value = 1
-
     r = find_rule_by_id(rule_number)
     r.conditions.each do |key, value|
       if @@context_stack.key?(key)
         unless @@context_stack[key] == value
           return_value = -1
+          r.mark = :forbid
           break
         end
       else
@@ -153,5 +184,22 @@ class Ai < Sinatra::Base
         return r
       end
     end
+  end
+
+  def clear_variables
+    @@rules_array.clear
+    @@conditions_list.clear
+    @@context_stack.clear
+    @@aims_stack.clear
+    @@questions.clear
+    file = open(File.expand_path('log.txt', settings.public_folder), "w")
+    file << '' 
+    file.close
+  end
+
+  def write_log(message)
+    file = open(File.expand_path('log.txt', settings.public_folder), "a")
+    file << message + "\n" 
+    file.close
   end
 end

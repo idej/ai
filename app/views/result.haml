@@ -1,0 +1,37 @@
+!!!
+%html
+  %head
+    %meta{:charset => "utf-8"}
+    %title Ai
+    %link{:href => "/css/bootstrap.min.css", :rel => "stylesheet"}
+    %link{:href => "/css/application.css", :rel => "stylesheet"}
+  %body
+    .container
+      .row
+        .col-md-12
+          .tabbable
+            %ul.nav.nav-tabs
+              %li
+                %a#first-tab{href: "#first-step"} Шаг 1
+              %li
+                %a#second-tab{href: "#second-step"} Шаг 2
+              %li
+                %a#third-tab{href: "#third-step"} Шаг 3
+              %li.active
+                %a#result-tab{href: "#result-step"} Результат
+
+            .tab-content
+              #first-step.tab-pane
+              #second-step.tab-pane
+              #result-tab.tab-pane.active
+                .col-md-4.col-md-offset-4.well.main
+                  .form-group
+                    %h2 #{@aim}: #{@result}
+                  .form-group
+                    .pull-right
+                      %a.btn.btn-primary{href: "/"} Новый поиск
+
+
+    %script{src: "/js/jquery.js"}
+    %script{src: "/js/bootstrap.min.js"}
+    %script{src: "/js/application.js"}

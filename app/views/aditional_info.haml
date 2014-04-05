@@ -1,0 +1,44 @@
+!!!
+%html
+  %head
+    %meta{:charset => "utf-8"}
+    %title Ai
+    %link{:href => "/css/bootstrap.min.css", :rel => "stylesheet"}
+    %link{:href => "/css/application.css", :rel => "stylesheet"}
+  %body
+    .container
+      .row
+        .col-md-12
+          .tabbable
+            %ul.nav.nav-tabs
+              %li
+                %a#first-tab{href: "#first-step"} Шаг 1
+              %li
+                %a#second-tab{href: "#second-step"} Шаг 2
+              %li.active
+                %a#third-tab{href: "#third-step"} Шаг 3
+              %li
+                %a#result-tab{href: "#result-step"} Результат
+
+            %form(action='/additional_info' method='post')
+              .col-md-4.col-md-offset-4.well.main
+                %h4 Введите дополнительную информацию
+                %hr
+                .form-group
+                  %label.control-label
+                    =@input_param
+                  %select.form-control{name: "additional_info", id: 'additional-select'}
+                    %option
+                    -@values.map do |a|
+                      -haml_tag :option, "#{a}", value: a
+                .form-group
+                  .pull-left
+                    %a.btn.btn-primary{href: "/"} Новый поиск
+                  .pull-right
+                    %button#continue-button.btn.btn-primary Продолжить
+                        
+
+
+    %script{src: "/js/jquery.js"}
+    %script{src: "/js/bootstrap.min.js"}
+    %script{src: "/js/application.js"}
